@@ -9,6 +9,6 @@ if __name__ == '__main__':
         w = MainWindow()
         sys.exit(app.exec_())
     except:
-        print(1)
+        pass
 
 
