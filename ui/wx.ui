@@ -20,7 +20,7 @@
       <x>10</x>
       <y>10</y>
       <width>201</width>
-      <height>211</height>
+      <height>291</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -35,6 +35,13 @@
       <widget class="QPushButton" name="pushButton_2">
        <property name="text">
         <string>开启自动回复</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_6">
+       <property name="text">
+        <string>发送消息</string>
        </property>
       </widget>
      </item>
@@ -69,6 +76,19 @@
       <width>511</width>
       <height>541</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>500</y>
+      <width>171</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Version:1.0.0</string>
     </property>
    </widget>
   </widget>
