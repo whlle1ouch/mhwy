@@ -9,6 +9,12 @@ from autoreplywindow import AutoReplyWindow
 class MainWindow(QMainWindow,Ui_MainWindow):
     wxTriggerSingal = pyqtSignal(bool)   #定义信号关闭QThread中的进程
 
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls,'_instance'):
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
     def __init__(self, parent=None):
         QMainWindow.__init__(self,parent)
         self.setupUi(self)

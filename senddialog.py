@@ -13,13 +13,16 @@ class SendDialog(QDialog,Ui_Dialog):
         self.mainWindow =parent
         self.setupUi(self)
         self.setWindowTitle('发送消息')
+        self.textEdit = MessageEdit(self)
+        self.gridLayout.addWidget(self.textEdit)
+
         self.setEvent()
 
 
     def setEvent(self):
         self.pushButton.clicked.connect(self.on_clicked_pushButton)
         self.pushButton_2.clicked.connect(self.on_clicked_pushButton_2)
-        self.textEdit.keyPressEvent = self.keyPressEvent
+
 
 
     def on_clicked_pushButton(self):
@@ -28,21 +31,9 @@ class SendDialog(QDialog,Ui_Dialog):
             bot = self.mainWindow.bot
             if bot and bot.is_listening:
                 receiver = wxpy.ensure_one(bot.friends().search(self.sender))
-                print(receiver)
                 receiver.send(msg_text)
             self.textEdit.setText("")
         self.hide()
-
-    def keyPressEvent(self,e):
-        if e.key()==Qt.Key_Enter:
-            if self.textEdit.toPlainText() != "":
-                return self.on_clicked_pushButton()
-            else:
-                return self.on_clicked_pushButton_2()
-        else:
-            return QTextEdit.keyPressEvent(e)
-
-
 
     def on_clicked_pushButton_2(self):
         self.hide()
@@ -53,4 +44,16 @@ class SendDialog(QDialog,Ui_Dialog):
             self.label_2.setText(sender)
 
 
+class MessageEdit(QTextEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.mainWidget = parent
 
+    def keyPressEvent(self, QKeyEvent):
+        if QKeyEvent.key()==Qt.Key_Return:
+            return self.mainWidget.on_clicked_pushButton()
+        elif QKeyEvent.key() ==  Qt.Key_Escape:
+            self.mainWidget.hide()
+
+        else:
+            return super().keyPressEvent(QKeyEvent)
