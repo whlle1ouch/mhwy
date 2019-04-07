@@ -6,44 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>449</width>
-    <height>216</height>
+    <width>443</width>
+    <height>441</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>100</x>
-     <y>30</y>
-     <width>86</width>
-     <height>29</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>30</y>
-     <width>86</width>
-     <height>29</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>To：</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
      <x>370</x>
-     <y>170</y>
+     <y>390</y>
      <width>51</width>
      <height>31</height>
     </rect>
@@ -55,8 +29,8 @@
   <widget class="QPushButton" name="pushButton_2">
    <property name="geometry">
     <rect>
-     <x>370</x>
-     <y>30</y>
+     <x>300</x>
+     <y>390</y>
      <width>51</width>
      <height>31</height>
     </rect>
@@ -68,13 +42,23 @@
   <widget class="QWidget" name="gridLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>70</y>
-     <width>381</width>
-     <height>91</height>
+     <x>10</x>
+     <y>300</y>
+     <width>411</width>
+     <height>71</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout"/>
+  </widget>
+  <widget class="QListView" name="listView">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>411</width>
+     <height>281</height>
+    </rect>
+   </property>
   </widget>
  </widget>
  <resources/>

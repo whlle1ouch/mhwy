@@ -10,10 +10,7 @@ import json
 
 class AutoReplyWindow(QWidget,Ui_Form):
 
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls,'_instance'):
-            cls._instance = QWidget.__new__(cls)
-        return cls._instance
+
 
     def __init__(self, parent=None):
         QWidget.__init__(self,None)

@@ -4,15 +4,12 @@ from PyQt5.QtWidgets import QMainWindow,QListWidgetItem,QApplication,QListWidget
 from PyQt5.QtCore import QThread,pyqtSignal,Qt
 import wxpy,win32timezone,datetime
 from senddialog import SendDialog
+from chatwindow import ChatWindow
 from autoreplywindow import AutoReplyWindow
+from utility.autoreply import fuzzMatch
 
 class MainWindow(QMainWindow,Ui_MainWindow):
     wxTriggerSingal = pyqtSignal(bool)   #定义信号关闭QThread中的进程
-
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls,'_instance'):
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
 
     def __init__(self, parent=None):
@@ -25,7 +22,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.setWindowTitle('Magic&House SoftWare')
 
         #副窗体
-        self.sendDialog = SendDialog(self)
+        self.friendsWindowDict = dict()
         self.autoReplyWindow = AutoReplyWindow(self)
 
         #显示列表
@@ -101,6 +98,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
             self.pushButton_2.setText('开启自动回复')
             self.wxTriggerSingal.emit(False)
 
+
     def on_clicked_pushButton(self):
         self.autoReplyWindow.showNormal()
 
@@ -110,13 +108,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         :param item:
         :return:
         """
-
         index = self.listWidget.row(item)
         sender = self.senderList[index]
-        self.sendDialog.changeSender(sender)
-        self.sendDialog.showNormal()
-
-
+        chatWindow = self.friendsWindowDict.get(sender,None)
+        if chatWindow:
+            chatWindow.showNormal()
 
 
 
@@ -126,11 +122,17 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         :param msg_str: 微信自动监听的字符串，分隔符sep
         :return:
         """
+
         msg_list = msg_str.split(sep)
         sender = msg_list[0]
         time = msg_list[1]
         content = msg_list[2]
+        chatWindow = self.friendsWindowDict.get(sender,None)
+        if not chatWindow:
+            chatWindow = ChatWindow(friend=sender,mainwindow=self)
+            self.friendsWindowDict[sender] = chatWindow
         self.listCount += 1
+        chatWindow.addMsgToList(content,time,sender)
         msg = sender + '  ' + '('+ time +')' + ':\n' + content
         listItem = QListWidgetItem()
         listItem.setText(msg)
@@ -217,17 +219,18 @@ class WxThread(QThread):
                 receive_time = datetime.datetime.strftime(msg.receive_time, '%Y-%m-%d %H:%M')
                 msg_content = msg.text
                 record = sender_name + '   '+'(' + receive_time + ' )' +'  :\n' + msg_content+'\n'
-                with open('data/record.txt','a',encoding='utf-8') as f:
+                filename = 'data/'+ sender_name+ '.text'
+                with open(filename,'a',encoding='utf-8') as f:
                     f.write(record)
                 if self.is_replying:
                     sep = '{msg_separator}'
                     msg_str = sender_name + sep  + receive_time + sep + msg_content
+                    # reply_content = fuzzMatch(self.window.autoReplyWindow.replyList,msg_content)
+                    # if reply_content !='':
+                    #     msg.reply(reply_content)
                     self.sleep(1)
                     self.wxSignal.emit(msg_str)
-                else:
-                    self.window.bot.messages.clear()  ####如果上传消息，就清空历史消息
-                # else:
-                #     self.window.bot.stop()
+
 
             self.window.bot.join()
 
@@ -238,6 +241,9 @@ class WxThread(QThread):
         :return:
         """
         self.is_replying = flag
+
+
+
 
 
 

@@ -8,11 +8,12 @@ import wxpy
 class SendDialog(QDialog,Ui_Dialog):
 
 
-    def  __init__(self,parent=None):
+    def  __init__(self, friend , parent=None):
         QDialog.__init__(self,parent)
         self.mainWindow =parent
+        self.friend = friend
         self.setupUi(self)
-        self.setWindowTitle('发送消息')
+        self.setWindowTitle(friend)
         self.textEdit = MessageEdit(self)
         self.gridLayout.addWidget(self.textEdit)
 
@@ -33,7 +34,7 @@ class SendDialog(QDialog,Ui_Dialog):
                 receiver = wxpy.ensure_one(bot.friends().search(self.sender))
                 receiver.send(msg_text)
             self.textEdit.setText("")
-        self.hide()
+
 
     def on_clicked_pushButton_2(self):
         self.hide()
