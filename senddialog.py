@@ -11,6 +11,7 @@ class SendDialog(QDialog,Ui_Dialog):
     def  __init__(self, friend , parent=None):
         QDialog.__init__(self,parent)
         self.mainWindow =parent
+
         self.friend = friend
         self.setupUi(self)
         self.setWindowTitle(friend)

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from ui.wx import Ui_MainWindow
-from PyQt5.QtWidgets import QMainWindow,QListWidgetItem,QApplication,QListWidget,QMessageBox,qApp
-from PyQt5.QtCore import QThread,pyqtSignal,Qt
+from PyQt5.QtWidgets import QMainWindow,QListWidgetItem,QListWidget,QMessageBox,qApp
+from PyQt5.QtCore import QThread,pyqtSignal,Qt,QPropertyAnimation
+from PyQt5.QtGui import QColor
 import wxpy,win32timezone,datetime
 from senddialog import SendDialog
 from chatwindow import ChatWindow
 from autoreplywindow import AutoReplyWindow
-from utility.autoreply import fuzzMatch
+from utility.msg import *
 
 class MainWindow(QMainWindow,Ui_MainWindow):
     wxTriggerSingal = pyqtSignal(bool)   #定义信号关闭QThread中的进程
@@ -29,18 +30,20 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.listWidget.setAcceptDrops(True)
         self.listWidget.setFixedSize(self.listWidget.width(),self.listWidget.height())
         self.listWidget.setSizeAdjustPolicy(QListWidget.AdjustToContents)
-        self.listWidget.setStyleSheet('background-color:white;border-bottom:0.5px;border-color:grey')
+        self.listWidget.setStyleSheet('background-color:white;border-bottom:1px;border-color:grey')
+
 
         #定义微信bot线程
         self.wx = WxThread(self)
 
+        # 其他参数
+        self.autoReply = False
+        self.senderList = list()
+
         #定义事件和信号
         self.setEvent()
 
-        #其他参数
-        self.listMaxCount = 30
-        self.listCount = 0
-        self.senderList = list()
+
 
         self.show()
 
@@ -56,9 +59,6 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.wxTriggerSingal.connect(self.wx.stopEmit)
 
 
-
-
-
     def on_clicked_pushButton_5(self):
         """
         微信登录按钮
@@ -66,10 +66,12 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         """
         if (not self.bot) or (not self.bot.is_listening):
             qApp.processEvents()
-            self.bot = wxpy.Bot(cache_path='data/cache',login_callback=self.loginMessage)
+            self.bot = wxpy.Bot(cache_path='data/mhwx.cache',login_callback=self.loginMessage)
             self.openButton()
+            puid_path = 'data/' + self.bot.self.name+'_puid.pkl'
+            print(puid_path)
+            self.bot.enable_puid(path=puid_path)
             self.wx.start()
-
     def on_clicked_pushButton_4(self):
         """
         微信登出按钮
@@ -88,15 +90,13 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         """
         if self.pushButton_2.text() == '开启自动回复':
             if self.bot:
-                if not self.bot.is_listening:
-                    self.bot.start()
-                self.wxTriggerSingal.emit(True)
+                self.autoReply = True
                 self.pushButton_2.setText('停止自动回复')
 
                 qApp.processEvents()
         elif self.pushButton_2.text() == '停止自动回复':
             self.pushButton_2.setText('开启自动回复')
-            self.wxTriggerSingal.emit(False)
+            self.autoReply = False
 
 
     def on_clicked_pushButton(self):
@@ -109,42 +109,68 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         :return:
         """
         index = self.listWidget.row(item)
-        sender = self.senderList[index]
-        chatWindow = self.friendsWindowDict.get(sender,None)
-        if chatWindow:
+        sender_puid = self.senderList[index]
+        chat = self.friendsWindowDict.get(sender_puid,None)
+        if chat:
+            chatWindow = chat.get('window')
             chatWindow.showNormal()
 
 
 
-    def listwidget_addItem(self, msg_str,sep='{msg_separator}'):
+    def listwidget_addItem(self, msg_str):
         """
         增加消息条目
         :param msg_str: 微信自动监听的字符串，分隔符sep
         :return:
         """
 
-        msg_list = msg_str.split(sep)
-        sender = msg_list[0]
-        time = msg_list[1]
-        content = msg_list[2]
-        chatWindow = self.friendsWindowDict.get(sender,None)
-        if not chatWindow:
-            chatWindow = ChatWindow(friend=sender,mainwindow=self)
-            self.friendsWindowDict[sender] = chatWindow
-        self.listCount += 1
-        chatWindow.addMsgToList(content,time,sender)
-        msg = sender + '  ' + '('+ time +')' + ':\n' + content
-        listItem = QListWidgetItem()
-        listItem.setText(msg)
-        listItem.setTextAlignment(Qt.AlignLeft)
-        listItem.setTextAlignment(Qt.AlignTop)
+        sender_puid,time,msg_content = dePackMsg(msg_str)
+        sender = wxpy.ensure_one(self.bot.friends().search(puid=sender_puid))
 
-        if self.listCount > self.listMaxCount:
-            self.listWidget.takeItem(self.listMaxCount-1)
-            self.senderList.pop(-1)
+        sender_name = sender.name
+        msg = parseMsg(sender_name, time, msg_content)
+
+        chat = self.friendsWindowDict.get(sender_puid,None)
+        if not chat:
+            chatWindow = ChatWindow( friend = sender , mainwindow=self)
+            print(2)
+            self.friendsWindowDict[sender_puid] = dict()
+            self.friendsWindowDict[sender_puid]['window'] = chatWindow
+            listItem = QListWidgetItem()
+            listItem.setText(msg)
+            listItem.setTextAlignment(Qt.AlignLeft)
+            listItem.setTextAlignment(Qt.AlignTop)
+            self.listWidget.insertItem(0, listItem)
             qApp.processEvents()
-        self.listWidget.insertItem(0,listItem)
-        self.senderList.insert(0,sender)
+            self.senderList.insert(0, sender_puid)
+            self.friendsWindowDict[sender_puid]['row'] = listItem
+
+            self.bot.puid_map.dump()
+
+        elif chat.get('row'):
+            chatWindow = chat.get('window')
+            listItem = chat.get('row')
+            listItem.setText(msg)
+        else:
+            chatWindow = chat.get('window')
+            listItem = QListWidgetItem()
+            listItem.setText(msg)
+            listItem.setTextAlignment(Qt.AlignLeft)
+            listItem.setTextAlignment(Qt.AlignTop)
+            self.listWidget.insertItem(0, listItem)
+            qApp.processEvents()
+            self.senderList.insert(0, sender_puid)
+            chat['row'] = listItem
+
+
+
+        # anime = QPropertyAnimation(listItem, b'color')
+        # anime.setDuration(1000)
+        # anime.setEndValue(QColor(0, 0, 0, 0))  # 米黄
+        # anime.setKeyValueAt(0.5, QColor(255, 0, 0, 250))  # 红色
+        # anime.setEndValue(QColor(0, 0, 0, 0))  # 米黄
+        # anime.start()
+        chatWindow.addMsgToList(sender_name,time,msg_content)
         qApp.processEvents()
 
     def loginMessage(self):
@@ -195,7 +221,7 @@ class WxThread(QThread):
         super().__init__()
         self.work = True
         self.window = window
-        self.is_replying = False
+        self.is_listening = True
 
 
     def __del__(self):
@@ -216,18 +242,15 @@ class WxThread(QThread):
                 :return:
                 """
                 sender_name = msg.sender.name
+                sender_puid = msg.sender.puid
                 receive_time = datetime.datetime.strftime(msg.receive_time, '%Y-%m-%d %H:%M')
                 msg_content = msg.text
-                record = sender_name + '   '+'(' + receive_time + ' )' +'  :\n' + msg_content+'\n'
-                filename = 'data/'+ sender_name+ '.text'
+                record = packMsg(sender=sender_name,time=receive_time,message=msg_content)
+                filename = 'data/'+ sender_puid+ '.dat'
                 with open(filename,'a',encoding='utf-8') as f:
                     f.write(record)
-                if self.is_replying:
-                    sep = '{msg_separator}'
-                    msg_str = sender_name + sep  + receive_time + sep + msg_content
-                    # reply_content = fuzzMatch(self.window.autoReplyWindow.replyList,msg_content)
-                    # if reply_content !='':
-                    #     msg.reply(reply_content)
+                if self.is_listening:
+                    msg_str = packMsg(sender=sender_puid,time=receive_time,message=msg_content,seq_msg="")
                     self.sleep(1)
                     self.wxSignal.emit(msg_str)
 
@@ -240,7 +263,7 @@ class WxThread(QThread):
         组织消息发送
         :return:
         """
-        self.is_replying = flag
+        self.is_listening = flag
 
 
 

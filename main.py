@@ -20,7 +20,8 @@ if __name__ == '__main__':
             w = MainWindow()
 
         sys.exit(app.exec_())
-    except:
-        pass
+    except Exception as e:
+        print(e.args)
+
 
 
