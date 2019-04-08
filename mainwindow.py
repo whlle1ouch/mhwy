@@ -35,6 +35,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
         #定义微信bot线程
         self.wx = WxThread(self)
+        self.loginThread = LoginThread(self)
 
         # 其他参数
         self.autoReply = False
@@ -57,6 +58,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         #信号
         self.wx.wxSignal.connect(self.listwidget_addItem)
         self.wxTriggerSingal.connect(self.wx.stopEmit)
+        self.loginThread.loginSingnal.connect(self.startListenning)
 
 
     def on_clicked_pushButton_5(self):
@@ -64,14 +66,13 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         微信登录按钮
         :return:
         """
-        if (not self.bot) or (not self.bot.is_listening):
+        if not self.bot:
             qApp.processEvents()
-            self.bot = wxpy.Bot(cache_path='data/mhwx.cache',login_callback=self.loginMessage)
-            self.openButton()
-            puid_path = 'data/' + self.bot.self.name+'_puid.pkl'
-            print(puid_path)
-            self.bot.enable_puid(path=puid_path)
-            self.wx.start()
+            self.loginThread.start()
+
+
+
+
     def on_clicked_pushButton_4(self):
         """
         微信登出按钮
@@ -173,6 +174,11 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         chatWindow.addMsgToList(sender_name,time,msg_content)
         qApp.processEvents()
 
+    def startListenning(self):
+        self.openButton()
+        self.wx.start()
+        self.loginMessage()
+
     def loginMessage(self):
         """
         登录消息提示
@@ -267,6 +273,22 @@ class WxThread(QThread):
 
 
 
+class LoginThread(QThread):
+    loginSingnal = pyqtSignal()
+    def __init__(self, window):
+        super().__init__()
+        self.work = True
+        self.window = window
+
+    def __del__(self):
+        self.work = False
+        self.wait()
+
+    def run(self):
+        self.window.bot = wxpy.Bot(cache_path='data/mhwx.cache')
+        puid_path = 'data/' + self.window.bot.self.name + '_puid.pkl'
+        self.window.bot.enable_puid(path=puid_path)
+        self.loginSingnal.emit()
 
 
 
