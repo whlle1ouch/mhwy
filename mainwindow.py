@@ -34,7 +34,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
 
 
         #定义微信bot线程
-        self.wx = WxThread(self)
+        self.wxThread = WxThread(self)
         self.loginThread = LoginThread(self)
 
         # 其他参数
@@ -56,8 +56,8 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.listWidget.itemDoubleClicked.connect(self.on_clicked_listWdigetItem)   #列表双击事件
         self.pushButton.clicked.connect(self.on_clicked_pushButton)
         #信号
-        self.wx.wxSignal.connect(self.listwidget_addItem)
-        self.wxTriggerSingal.connect(self.wx.stopEmit)
+        self.wxThread.wxSignal.connect(self.listwidget_addItem)
+        self.wxTriggerSingal.connect(self.wxThread.stopEmit)
         self.loginThread.loginSingnal.connect(self.startListenning)
 
 
@@ -134,15 +134,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         chat = self.friendsWindowDict.get(sender_puid,None)
         if not chat:
             chatWindow = ChatWindow( friend = sender , mainwindow=self)
-            print(2)
             self.friendsWindowDict[sender_puid] = dict()
             self.friendsWindowDict[sender_puid]['window'] = chatWindow
-            listItem = QListWidgetItem()
-            listItem.setText(msg)
-            listItem.setTextAlignment(Qt.AlignLeft)
-            listItem.setTextAlignment(Qt.AlignTop)
-            self.listWidget.insertItem(0, listItem)
-            qApp.processEvents()
+            listItem = self.addItemToList(msg)
             self.senderList.insert(0, sender_puid)
             self.friendsWindowDict[sender_puid]['row'] = listItem
 
@@ -154,29 +148,26 @@ class MainWindow(QMainWindow,Ui_MainWindow):
             listItem.setText(msg)
         else:
             chatWindow = chat.get('window')
-            listItem = QListWidgetItem()
-            listItem.setText(msg)
-            listItem.setTextAlignment(Qt.AlignLeft)
-            listItem.setTextAlignment(Qt.AlignTop)
-            self.listWidget.insertItem(0, listItem)
-            qApp.processEvents()
+            listItem = self.addItemToList(msg)
             self.senderList.insert(0, sender_puid)
             chat['row'] = listItem
 
-
-
-        # anime = QPropertyAnimation(listItem, b'color')
-        # anime.setDuration(1000)
-        # anime.setEndValue(QColor(0, 0, 0, 0))  # 米黄
-        # anime.setKeyValueAt(0.5, QColor(255, 0, 0, 250))  # 红色
-        # anime.setEndValue(QColor(0, 0, 0, 0))  # 米黄
-        # anime.start()
         chatWindow.addMsgToList(sender_name,time,msg_content)
         qApp.processEvents()
 
+
+    def addItemToList(self,text):
+        listItem = QListWidgetItem()
+        listItem.setText(text)
+        listItem.setTextAlignment(Qt.AlignLeft)
+        listItem.setTextAlignment(Qt.AlignTop)
+        self.listWidget.insertItem(0, listItem)
+        qApp.processEvents()
+        return listItem
+
     def startListenning(self):
         self.openButton()
-        self.wx.start()
+        self.wxThread.start()
         self.loginMessage()
 
     def loginMessage(self):
@@ -247,14 +238,9 @@ class WxThread(QThread):
                 :param msg:
                 :return:
                 """
-                sender_name = msg.sender.name
                 sender_puid = msg.sender.puid
                 receive_time = datetime.datetime.strftime(msg.receive_time, '%Y-%m-%d %H:%M')
                 msg_content = msg.text
-                record = packMsg(sender=sender_name,time=receive_time,message=msg_content)
-                filename = 'data/'+ sender_puid+ '.dat'
-                with open(filename,'a',encoding='utf-8') as f:
-                    f.write(record)
                 if self.is_listening:
                     msg_str = packMsg(sender=sender_puid,time=receive_time,message=msg_content,seq_msg="")
                     self.sleep(1)

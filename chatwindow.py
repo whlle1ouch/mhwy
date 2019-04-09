@@ -28,15 +28,17 @@ class ChatWindow(QWidget,Ui_Form):
     def on_clicked_pushButton(self):
         if self.textEdit.toPlainText() != "":
             msg_text = self.textEdit.toPlainText()
-            bot = self.mainWindow.bot
-            if bot and bot.is_listening:
-                self.friend.send(msg_text)
-                sender = " "
-                time = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
-                self.addMsgToList(sender,time,msg_text)
-                self.saveRecord(sender,time,msg_text)
-
+            self.sendMessage(msg_text)
             self.textEdit.setText("")
+
+    def sendMessage(self,message):
+        bot = self.mainWindow.bot
+        if bot and bot.is_listening:
+            self.friend.send(message)
+            sender = " "
+            time = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
+            self.addMsgToList(sender, time, message)
+
 
 
     def on_clicked_pushButton_2(self):
@@ -61,14 +63,11 @@ class ChatWindow(QWidget,Ui_Form):
                 sender,time,message = dePackMsg(msgHistory)
                 self.addMsgToList(sender,time,message)
 
-
-
-
     def listDropToBottle(self):
         self.listWidget.setCurrentRow(self.listWidget.count()-1)
 
     def addMsgToList(self, sender , time , message):
-
+        self.saveRecord(sender,time,message)
         msg = parseMsg(sender,time,message)
         item = QListWidgetItem()
         item.setText(msg)
@@ -79,13 +78,6 @@ class ChatWindow(QWidget,Ui_Form):
             item.setTextAlignment(Qt.AlignRight)
         self.listWidget.addItem(item)
         self.listDropToBottle()
-
-
-
-
-
-
-
 
 
 

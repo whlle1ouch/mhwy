@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from ui.autoreply import Ui_Form
-from PyQt5.QtWidgets import QWidget,QTableWidgetItem,QMessageBox,QApplication,QMenu,QHeaderView,QTableWidgetItem
+from PyQt5.QtWidgets import QWidget,QTableWidgetItem,QMessageBox,QApplication,\
+    QMenu,QHeaderView,QTableWidgetItem,QRadioButton,QHBoxLayout
 from PyQt5.QtCore import Qt
 from PyQt5.Qt import QCursor
 import json
@@ -20,11 +21,14 @@ class AutoReplyWindow(QWidget,Ui_Form):
 
         self.pushButton_2.setEnabled(False)
         # self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)  ###设置手动调整列宽
+
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.tableWidget.horizontalHeader().setSectionResizeMode(0,QHeaderView.Interactive)
         self.tableWidget.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(3, QHeaderView.Interactive)
+        # self.tableWidget.horizontalHeader().setSectionResizeMode(3, QHeaderView.Interactive)
         self.tableWidget.setContextMenuPolicy(Qt.CustomContextMenu) # 右键菜单，如果不设为CustomContextMenu,无法使用customContextMenuRequested
-
+        self.tableWidget.horizontalHeader().setDefaultAlignment(Qt.AlignCenter)
         self.loadReply()
         self.setEvent()
 
@@ -58,13 +62,15 @@ class AutoReplyWindow(QWidget,Ui_Form):
             self.tableWidget.setEnabled(False)
 
 
+
     def on_clicked_pushButton_4(self):
         self.hide()
 
     def loadReply(self):
         with open('data/reply.json','r',encoding='utf-8') as f:
             self.replyList = json.loads(f.read())
-        self.addTable(self.replyList)
+        if self.replyList:
+            self.addTable(self.replyList)
 
 
     def save_to_local(self):
@@ -83,10 +89,20 @@ class AutoReplyWindow(QWidget,Ui_Form):
 
 
     def addRow(self, rowNum):
+        if rowNum == -1:
+            rowNum=0
+        print(rowNum)
         self.tableWidget.insertRow(rowNum)
+        checkBox = QRadioButton()
+        checkBox.setChecked(False)
+        self.tableWidget.setCellWidget(rowNum,3,checkBox)
+        self.tableWidget.cellWidget(rowNum,3).setStyleSheet("margin-left:auto;margin-right:auto;")
+
 
     def deleteRow(self, rowNum):
         self.tableWidget.removeRow(rowNum)
+
+
 
 
 
@@ -101,11 +117,19 @@ class AutoReplyWindow(QWidget,Ui_Form):
         # table.setEnabled(False)
         for i, row in enumerate(value):
             for j, cell in enumerate(row):
-                newItem = QTableWidgetItem(str(cell))
-                newItem.setTextAlignment(Qt.AlignCenter)
-                table.setItem(i, j, newItem)
+                if j!=3:
+                    newItem = QTableWidgetItem(str(cell))
+                    newItem.setTextAlignment(Qt.AlignCenter)
+                    table.setItem(i, j, newItem)
+                else:
+                    newCheck = QRadioButton()
+                    newCheck.setChecked(bool(cell))
+
+                    table.setCellWidget(i,j,newCheck)
+                    table.cellWidget(i,j).setStyleSheet("margin-left:auto;")
                 QApplication.processEvents()
         self.tableWidget.setEnabled(False)
+
 
     def refreshTable(self):
         row = self.tableWidget.rowCount()
@@ -125,6 +149,14 @@ class AutoReplyWindow(QWidget,Ui_Form):
             for j in range(column):
                 if self.tableWidget.item(i,j):
                     row.append(self.tableWidget.item(i,j).text())
+                elif self.tableWidget.cellWidget(i,j):
+                    checkState = self.tableWidget.cellWidget(i,j).isChecked()
+                    if checkState:
+                        row.append(1)
+                    else:
+                        row.append(0)
+                else:
+                    row.append("")
             newList.append(row)
         self.replyList = newList
         self.save_to_local()

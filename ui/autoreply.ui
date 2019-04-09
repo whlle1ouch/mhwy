@@ -88,6 +88,11 @@
      <string>回答</string>
     </property>
    </column>
+   <column>
+    <property name="text">
+     <string>自动回复</string>
+    </property>
+   </column>
   </widget>
  </widget>
  <resources/>
