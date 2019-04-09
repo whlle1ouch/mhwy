@@ -19,7 +19,7 @@ class Ui_Form(object):
         self.pushButton_2.setGeometry(QtCore.QRect(350, 490, 71, 31))
         self.pushButton_2.setObjectName("pushButton_2")
         self.gridLayoutWidget = QtWidgets.QWidget(Form)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 400, 491, 71))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 400, 491, 81))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -27,6 +27,9 @@ class Ui_Form(object):
         self.listWidget = QtWidgets.QListWidget(Form)
         self.listWidget.setGeometry(QtCore.QRect(10, 10, 491, 371))
         self.listWidget.setObjectName("listWidget")
+        self.pushButton_3 = QtWidgets.QPushButton(Form)
+        self.pushButton_3.setGeometry(QtCore.QRect(400, 380, 101, 21))
+        self.pushButton_3.setObjectName("pushButton_3")
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -36,4 +39,5 @@ class Ui_Form(object):
         Form.setWindowTitle(_translate("Form", "Form"))
         self.pushButton.setText(_translate("Form", "发送"))
         self.pushButton_2.setText(_translate("Form", "关闭"))
+        self.pushButton_3.setText(_translate("Form", "取消自动回复"))
 

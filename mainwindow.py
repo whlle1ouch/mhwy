@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from ui.wx import Ui_MainWindow
 from PyQt5.QtWidgets import QMainWindow,QListWidgetItem,QListWidget,QMessageBox,qApp
-from PyQt5.QtCore import QThread,pyqtSignal,Qt,QPropertyAnimation
-from PyQt5.QtGui import QColor
-import wxpy,win32timezone,datetime
-from senddialog import SendDialog
+from PyQt5.QtCore import QThread,pyqtSignal,Qt
+import wxpy,win32timezone,os
+from datetime import datetime
 from chatwindow import ChatWindow
 from autoreplywindow import AutoReplyWindow
 from utility.msg import *
+from utility.autoreply import match_reply
 
 class MainWindow(QMainWindow,Ui_MainWindow):
     wxTriggerSingal = pyqtSignal(bool)   #定义信号关闭QThread中的进程
@@ -45,7 +45,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.setEvent()
 
 
-
+        print(self.autoReplyWindow.reply_list)
         self.show()
 
     def setEvent(self):
@@ -53,6 +53,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.pushButton_5.clicked.connect(self.on_clicked_pushButton_5)  #登录微信按钮
         self.pushButton_4.clicked.connect(self.on_clicked_pushButton_4)  #退出登录
         self.pushButton_2.clicked.connect(self.on_clicked_pushButton_2)  #开启自动回复按钮
+        self.pushButton_3.clicked.connect(self.on_clicked_pushButton_3)
         self.listWidget.itemDoubleClicked.connect(self.on_clicked_listWdigetItem)   #列表双击事件
         self.pushButton.clicked.connect(self.on_clicked_pushButton)
         #信号
@@ -83,6 +84,9 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.bot = None
         self.closeButton()
         self.logoutMessage()
+
+    def on_clicked_pushButton_3(self):
+        self.wxTriggerSingal.emit(False)
 
     def on_clicked_pushButton_2(self):
         """
@@ -151,7 +155,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
             listItem = self.addItemToList(msg)
             self.senderList.insert(0, sender_puid)
             chat['row'] = listItem
-
+        self.replyMessage(chatWindow,msg_content)
         chatWindow.addMsgToList(sender_name,time,msg_content)
         qApp.processEvents()
 
@@ -169,6 +173,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         self.openButton()
         self.wxThread.start()
         self.loginMessage()
+        self.wxTriggerSingal.emit(True)
 
     def loginMessage(self):
         """
@@ -186,6 +191,13 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         qApp.processEvents()
         QMessageBox.information(self.centralwidget,'提示！','微信已登出！')
 
+    def replyMessage(self, chatWidget, msg):
+        if self.autoReply and chatWidget.autoReply:
+            reply_list = self.autoReplyWindow.reply_list
+            reply_msg = match_reply(reply_list,msg)
+            chatWidget.sendMessage(reply_msg)
+
+
 
 
     def openButton(self):
@@ -195,6 +207,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         """
         self.pushButton_5.setEnabled(False)
         self.pushButton_2.setEnabled(True)
+        self.pushButton_3.setEnabled(False)
         self.pushButton_4.setEnabled(True)
 
     def closeButton(self):
@@ -203,6 +216,7 @@ class MainWindow(QMainWindow,Ui_MainWindow):
         """
         self.pushButton_5.setEnabled(True)
         self.pushButton_2.setEnabled(False)
+        self.pushButton_3.setEnabled(False)
         self.pushButton_4.setEnabled(False)
 
 
@@ -218,7 +232,7 @@ class WxThread(QThread):
         super().__init__()
         self.work = True
         self.window = window
-        self.is_listening = True
+        self.is_listening = False
 
 
     def __del__(self):
@@ -239,7 +253,7 @@ class WxThread(QThread):
                 :return:
                 """
                 sender_puid = msg.sender.puid
-                receive_time = datetime.datetime.strftime(msg.receive_time, '%Y-%m-%d %H:%M')
+                receive_time = datetime.strftime(msg.receive_time, '%Y-%m-%d %H:%M')
                 msg_content = msg.text
                 if self.is_listening:
                     msg_str = packMsg(sender=sender_puid,time=receive_time,message=msg_content,seq_msg="")

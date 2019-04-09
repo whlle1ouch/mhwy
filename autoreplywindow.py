@@ -2,7 +2,7 @@
 
 from ui.autoreply import Ui_Form
 from PyQt5.QtWidgets import QWidget,QTableWidgetItem,QMessageBox,QApplication,\
-    QMenu,QHeaderView,QTableWidgetItem,QRadioButton,QHBoxLayout
+    QMenu,QHeaderView,QTableWidgetItem,QCheckBox
 from PyQt5.QtCore import Qt
 from PyQt5.Qt import QCursor
 import json
@@ -59,6 +59,7 @@ class AutoReplyWindow(QWidget,Ui_Form):
             self.refreshTable()
             if self.pushButton.text()=='取消':
                 self.pushButton.setText('修改')
+            self.pushButton_2.setEnabled(False)
             self.tableWidget.setEnabled(False)
 
 
@@ -89,11 +90,10 @@ class AutoReplyWindow(QWidget,Ui_Form):
 
 
     def addRow(self, rowNum):
-        if rowNum == -1:
-            rowNum=0
-        print(rowNum)
+
+        rowNum+=1
         self.tableWidget.insertRow(rowNum)
-        checkBox = QRadioButton()
+        checkBox = QCheckBox()
         checkBox.setChecked(False)
         self.tableWidget.setCellWidget(rowNum,3,checkBox)
         self.tableWidget.cellWidget(rowNum,3).setStyleSheet("margin-left:auto;margin-right:auto;")
@@ -102,6 +102,16 @@ class AutoReplyWindow(QWidget,Ui_Form):
     def deleteRow(self, rowNum):
         self.tableWidget.removeRow(rowNum)
 
+    @property
+    def reply_list(self):
+        if self.replyList:
+            rs = list()
+            for row in self.replyList:
+                if row[3]:
+                    rs.append([row[1],row[2]])
+            return rs
+        else:
+            return None
 
 
 
@@ -122,7 +132,7 @@ class AutoReplyWindow(QWidget,Ui_Form):
                     newItem.setTextAlignment(Qt.AlignCenter)
                     table.setItem(i, j, newItem)
                 else:
-                    newCheck = QRadioButton()
+                    newCheck = QCheckBox()
                     newCheck.setChecked(bool(cell))
 
                     table.setCellWidget(i,j,newCheck)
@@ -150,7 +160,7 @@ class AutoReplyWindow(QWidget,Ui_Form):
                 if self.tableWidget.item(i,j):
                     row.append(self.tableWidget.item(i,j).text())
                 elif self.tableWidget.cellWidget(i,j):
-                    checkState = self.tableWidget.cellWidget(i,j).isChecked()
+                    checkState = self.tableWidget.cellWidget(i,j).checkState()
                     if checkState:
                         row.append(1)
                     else:
@@ -163,6 +173,7 @@ class AutoReplyWindow(QWidget,Ui_Form):
 
     def showMsg(self , title , msg):
         return QMessageBox.information(self,title,msg)
+
 
 
 

@@ -24,6 +24,7 @@ class ChatWindow(QWidget,Ui_Form):
     def setEvent(self):
         self.pushButton.clicked.connect(self.on_clicked_pushButton)
         self.pushButton_2.clicked.connect(self.on_clicked_pushButton_2)
+        self.pushButton_3.clicked.connect(self.on_clicked_pushButton_3)
 
     def on_clicked_pushButton(self):
         if self.textEdit.toPlainText() != "":
@@ -31,13 +32,14 @@ class ChatWindow(QWidget,Ui_Form):
             self.sendMessage(msg_text)
             self.textEdit.setText("")
 
-    def sendMessage(self,message):
-        bot = self.mainWindow.bot
-        if bot and bot.is_listening:
-            self.friend.send(message)
-            sender = " "
-            time = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
-            self.addMsgToList(sender, time, message)
+    def on_clicked_pushButton_3(self):
+        if self.pushButton_3.text()=='取消自动回复':
+            self.autoReply = False
+            self.pushButton_3.setText('开启自动回复')
+        else:
+            self.autoReply = True
+            self.pushButton_3.setText('取消自动回复')
+
 
 
 
@@ -79,7 +81,13 @@ class ChatWindow(QWidget,Ui_Form):
         self.listWidget.addItem(item)
         self.listDropToBottle()
 
-
+    def sendMessage(self,message):
+        bot = self.mainWindow.bot
+        if bot and bot.is_listening:
+            self.friend.send(message)
+            sender = " "
+            time = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M')
+            self.addMsgToList(sender, time, message)
 
 
 

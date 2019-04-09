@@ -55,7 +55,7 @@
      <item>
       <widget class="QPushButton" name="pushButton_3">
        <property name="text">
-        <string>本地聊天记录</string>
+        <string>离线</string>
        </property>
       </widget>
      </item>
